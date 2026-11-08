@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="id" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Koleksi Buku - Perpustakaan</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    .layout { display: flex; flex: 1; }
+    .sidebar { width: 280px; flex-shrink: 0; }
+    .content { flex: 1; padding: 2rem; min-width: 0; }
+    .sidebar .nav-link i { display: inline-block; width: 1.5rem; }
+    @media (max-width: 767.98px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex flex-column min-vh-100">
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar bg-body-tertiary border-bottom px-3">
+      <a class="navbar-brand d-flex align-items-center" href="index.html">
+        <i class="bi bi-book-half me-2 fs-4"></i> Perpustakaan
+      </a>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <form class="d-flex" role="search" action="Koleksi%20Buku.html" method="get">
+          <div class="input-group">
+            <input type="search" class="form-control" name="q" id="q" placeholder="Cari Judul Komik dan Novel ...." aria-label="Cari buku" required>
+            <button class="btn btn-outline-secondary" type="submit" aria-label="Cari"><i class="bi bi-search"></i></button>
+          </div>
+        </form>
+        <div id="authNav" class="d-flex flex-wrap align-items-center gap-2"></div>
+      </div>
+    </nav>
+
+    <div class="layout">
+
+      <!-- ===== SIDEBAR ===== -->
+      <aside class="sidebar d-flex flex-column p-3 bg-body-tertiary border-end">
+        <ul class="nav nav-pills flex-column mb-auto">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link link-body-emphasis"><i class="bi bi-house me-2"></i> Beranda</a>
+          </li>
+          <li>
+            <a href="Dashboard.html" class="nav-link link-body-emphasis"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+          </li>
+          <li>
+            <a href="Koleksi%20Buku.html" class="nav-link active" aria-current="page"><i class="bi bi-journal-bookmark me-2"></i> Koleksi Buku</a>
+          </li>
+          <li>
+            <a href="Peminjaman.html" class="nav-link link-body-emphasis"><i class="bi bi-box-arrow-up-right me-2"></i> Peminjaman</a>
+          </li>
+          <li>
+            <a href="Pengembalian.html" class="nav-link link-body-emphasis"><i class="bi bi-box-arrow-in-down-left me-2"></i> Pengembalian</a>
+          </li>
+          <li>
+            <a href="Riwayat%20peminjaman.html" class="nav-link link-body-emphasis"><i class="bi bi-clock-history me-2"></i> Riwayat Peminjaman</a>
+          </li>
+        </ul>
+        <hr>
+      </aside>
+
+      <!-- ===== KONTEN ===== -->
+      <main class="content">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+          <h1 class="h3 mb-0">Koleksi Buku</h1>
+          <a id="tombolAdmin" href="admin.html" class="btn btn-primary d-none">
+            <i class="bi bi-plus-lg me-1"></i> Tambah Buku
+          </a>
+        </div>
+
+        <form id="formFilter" class="row g-2 align-items-center mb-3" method="get" action="Koleksi%20Buku.html">
+          <input type="hidden" name="q" id="filterQ">
+          <div class="col-auto">
+            <label for="filterGenre" class="col-form-label"><i class="bi bi-funnel me-1"></i> Genre</label>
+          </div>
+          <div class="col-12 col-sm-auto">
+            <select class="form-select" id="filterGenre" name="genre">
+              <option value="">Semua genre</option>
+            </select>
+          </div>
+        </form>
+
+        <p id="info" class="text-body-secondary d-none"></p>
+        <div id="grid" class="row g-3"></div>
+      </main>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="data.js"></script>
+  <script>
+    renderAuthNav();
+    const sesi = getSesi();
+    if (sesi && sesi.role === 'admin') document.getElementById('tombolAdmin').classList.remove('d-none');
+
+    const params = new URLSearchParams(location.search);
+    const kata = (params.get('q') || '').trim();
+    const genre = (params.get('genre') || '').trim();
+    let buku = DB.get('buku', []);
+
+    // Dropdown filter genre
+    const selectGenre = document.getElementById('filterGenre');
+    DAFTAR_GENRE.forEach(function (g) {
+      const o = el('option', '', g);
+      o.value = g;
+      if (g === genre) o.selected = true;
+      selectGenre.appendChild(o);
+    });
+    document.getElementById('filterQ').value = kata;
+    selectGenre.addEventListener('change', function () {
+      document.getElementById('formFilter').submit();
+    });
+
+    const keterangan = [];
+    if (kata) {
+      const k = kata.toLowerCase();
+      buku = buku.filter(function (b) { return (b.judul + ' ' + b.penulis + ' ' + (b.genre || '')).toLowerCase().includes(k); });
+      document.getElementById('q').value = kata;
+      keterangan.push('"' + kata + '"');
+    }
+    if (genre) {
+      buku = buku.filter(function (b) { return b.genre === genre; });
+      keterangan.push('genre ' + genre);
+    }
+    if (keterangan.length) {
+      const info = document.getElementById('info');
+      info.textContent = buku.length + ' hasil untuk ' + keterangan.join(', ');
+      info.classList.remove('d-none');
+    }
+
+    const grid = document.getElementById('grid');
+    if (buku.length === 0) {
+      const kosong = el('div', 'col-12');
+      kosong.appendChild(el('div', 'alert alert-secondary', keterangan.length ? 'Buku tidak ditemukan.' : 'Belum ada buku. Admin dapat menambahkannya.'));
+      grid.appendChild(kosong);
+    }
+    buku.forEach(function (b) { grid.appendChild(kartuBuku(b)); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrasi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-body-tertiary">
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-6 col-lg-5">
+
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <h1 class="h4 mb-4 text-center">Registrasi Akun</h1>
+
+            <div id="pesan" class="alert d-none" role="alert"></div>
+
+            <form id="form">
+              <div class="mb-3">
+                <label for="nama" class="form-label">Nama Lengkap</label>
+                <input type="text" class="form-control" id="nama" required>
+              </div>
+              <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <div class="input-group">
+                  <span class="input-group-text">@</span>
+                  <input type="text" class="form-control" id="username"
+                         minlength="4" maxlength="20" pattern="[a-zA-Z0-9_]+"
+                         title="4-20 karakter, hanya huruf, angka, dan underscore" required>
+                </div>
+                <div class="form-text">4-20 karakter: huruf, angka, dan underscore.</div>
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" minlength="6" required>
+                <div class="form-text">Minimal 6 karakter.</div>
+              </div>
+              <div class="mb-4">
+                <label for="konfirmasi" class="form-label">Konfirmasi Password</label>
+                <input type="password" class="form-control" id="konfirmasi" minlength="6" required>
+              </div>
+              <button type="submit" class="btn btn-primary w-100">Daftar</button>
+            </form>
+
+            <p class="text-center text-body-secondary small mt-3 mb-0">
+              Sudah punya akun? <a href="login.html">Login</a> &middot; <a href="index.html">Beranda</a>
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    const pesan = document.getElementById('pesan');
+    function tampil(teks, tipe) {
+      pesan.className = 'alert alert-' + tipe;
+      pesan.textContent = teks;
+    }
+
+    document.getElementById('form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      await seedAdmin();
+
+      const nama = document.getElementById('nama').value.trim();
+      const username = document.getElementById('username').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      const konfirmasi = document.getElementById('konfirmasi').value;
+
+      if (password !== konfirmasi) { tampil('Konfirmasi password tidak sama.', 'danger'); return; }
+
+      const users = DB.get('users', []);
+      if (users.some(u => u.username === username)) { tampil('Username sudah digunakan.', 'danger'); return; }
+
+      users.push({ nama: nama, username: username, password: await hashTeks(password), role: 'user' });
+      if (DB.set('users', users)) {
+        tampil('Registrasi berhasil. Silakan login.', 'success');
+        this.reset();
+      }
+    });
+  </script>
+</body>
+</html>

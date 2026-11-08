@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="id" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Peminjaman - Perpustakaan</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    .layout { display: flex; flex: 1; }
+    .sidebar { width: 280px; flex-shrink: 0; }
+    .content { flex: 1; padding: 2rem; min-width: 0; }
+    .sidebar .nav-link i { display: inline-block; width: 1.5rem; }
+    @media (max-width: 767.98px) {
+      .layout { flex-direction: column; }
+      .sidebar { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex flex-column min-vh-100">
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar bg-body-tertiary border-bottom px-3">
+      <a class="navbar-brand d-flex align-items-center" href="index.html">
+        <i class="bi bi-book-half me-2 fs-4"></i> Perpustakaan
+      </a>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <form class="d-flex" role="search" action="Koleksi%20Buku.html" method="get">
+          <div class="input-group">
+            <input type="search" class="form-control" name="q" placeholder="Cari Judul Komik dan Novel ...." aria-label="Cari buku" required>
+            <button class="btn btn-outline-secondary" type="submit" aria-label="Cari"><i class="bi bi-search"></i></button>
+          </div>
+        </form>
+        <div id="authNav" class="d-flex flex-wrap align-items-center gap-2"></div>
+      </div>
+    </nav>
+
+    <div class="layout">
+
+      <!-- ===== SIDEBAR ===== -->
+      <aside class="sidebar d-flex flex-column p-3 bg-body-tertiary border-end">
+        <ul class="nav nav-pills flex-column mb-auto">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link link-body-emphasis"><i class="bi bi-house me-2"></i> Beranda</a>
+          </li>
+          <li>
+            <a href="Dashboard.html" class="nav-link link-body-emphasis"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+          </li>
+          <li>
+            <a href="Koleksi%20Buku.html" class="nav-link link-body-emphasis"><i class="bi bi-journal-bookmark me-2"></i> Koleksi Buku</a>
+          </li>
+          <li>
+            <a href="Peminjaman.html" class="nav-link active" aria-current="page"><i class="bi bi-box-arrow-up-right me-2"></i> Peminjaman</a>
+          </li>
+          <li>
+            <a href="Pengembalian.html" class="nav-link link-body-emphasis"><i class="bi bi-box-arrow-in-down-left me-2"></i> Pengembalian</a>
+          </li>
+          <li>
+            <a href="Riwayat%20peminjaman.html" class="nav-link link-body-emphasis"><i class="bi bi-clock-history me-2"></i> Riwayat Peminjaman</a>
+          </li>
+        </ul>
+        <hr>
+      </aside>
+
+      <!-- ===== KONTEN ===== -->
+      <main class="content">
+        <h1 class="h3 mb-4">Peminjaman</h1>
+        <div id="area" style="max-width: 560px;"></div>
+      </main>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="data.js"></script>
+  <script>
+    renderAuthNav();
+    const area = document.getElementById('area');
+
+    function pesan(teks, tipe, tautan) {
+      const box = el('div', 'alert alert-' + tipe);
+      box.appendChild(document.createTextNode(teks + ' '));
+      if (tautan) {
+        const a = el('a', 'alert-link', tautan.teks);
+        a.href = tautan.href;
+        box.appendChild(a);
+      }
+      return box;
+    }
+
+    function tampilForm() {
+      const buku = DB.get('buku', []).filter(function (b) { return b.stok > 0; });
+
+      if (buku.length === 0) {
+        area.appendChild(pesan('Belum ada buku yang tersedia untuk dipinjam.', 'secondary'));
+        return;
+      }
+
+      const idDipilih = new URLSearchParams(location.search).get('id');
+
+      const kartu = el('div', 'card shadow-sm');
+      const isi = el('div', 'card-body');
+      const info = el('div');
+      const form = el('form');
+
+      // Judul buku
+      const g1 = el('div', 'mb-3');
+      const l1 = el('label', 'form-label', 'Judul Buku');
+      l1.htmlFor = 'judul';
+      const sel = el('select', 'form-select');
+      sel.id = 'judul';
+      sel.required = true;
+      const opt0 = el('option', '', 'Pilih buku...');
+      opt0.value = '';
+      sel.appendChild(opt0);
+      buku.forEach(function (b) {
+        const o = el('option', '', b.judul + ' (' + b.jenis + (b.genre ? ', ' + b.genre : '') + ', stok ' + b.stok + ')');
+        o.value = b.id;
+        if (String(b.id) === idDipilih) o.selected = true;
+        sel.appendChild(o);
+      });
+      g1.append(l1, sel);
+
+      // Tanggal pinjam
+      const g2 = el('div', 'mb-3');
+      const l2 = el('label', 'form-label', 'Tanggal Pinjam');
+      l2.htmlFor = 'tglPinjam';
+      const t1 = el('input', 'form-control');
+      t1.type = 'date'; t1.id = 'tglPinjam'; t1.required = true;
+      t1.value = hariIni();
+      g2.append(l2, t1);
+
+      // Tanggal kembali
+      const g3 = el('div', 'mb-4');
+      const l3 = el('label', 'form-label', 'Tanggal Kembali');
+      l3.htmlFor = 'tglBatas';
+      const t2 = el('input', 'form-control');
+      t2.type = 'date'; t2.id = 'tglBatas'; t2.required = true;
+      t2.value = tambahHari(hariIni(), 7);
+      g3.append(l3, t2);
+
+      const btn = el('button', 'btn btn-primary', 'Pinjam Buku');
+      btn.type = 'submit';
+
+      form.append(g1, g2, g3, btn);
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        info.textContent = '';
+        const hasil = pinjamBuku(sel.value, t1.value, t2.value);
+        if (hasil.ok) {
+          info.appendChild(pesan('Peminjaman berhasil.', 'success', { teks: 'Lihat di Pengembalian', href: 'Pengembalian.html' }));
+          form.remove();
+          const lagi = el('a', 'btn btn-outline-primary', 'Pinjam buku lain');
+          lagi.href = 'Peminjaman.html';
+          info.appendChild(lagi);
+        } else {
+          info.appendChild(pesan(hasil.pesan, 'danger'));
+        }
+      });
+
+      isi.append(info, form);
+      kartu.appendChild(isi);
+      area.appendChild(kartu);
+    }
+
+    if (!getSesi()) {
+      area.appendChild(pesanLogin());
+    } else {
+      tampilForm();
+    }
+  </script>
+</body>
+</html>
